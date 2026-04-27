@@ -1,0 +1,374 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>OMNI OS</title>
+
+<style>
+:root{
+  --bg:#000;
+  --fg:#0f0;
+  --ai:#0ff;
+}
+
+body{
+  margin:0;
+  background:#000;
+  color:var(--fg);
+  font-family:monospace;
+  overflow:hidden;
+}
+
+canvas{
+  position:fixed;
+  inset:0;
+  z-index:0;
+}
+
+#ui{
+  position:relative;
+  z-index:2;
+  display:flex;
+  flex-direction:column;
+  height:100vh;
+}
+
+#output{
+  flex:1;
+  overflow-y:auto;
+  padding:20px;
+  white-space:pre-wrap;
+}
+
+#input{
+  border:none;
+  outline:none;
+  padding:15px;
+  font-size:16px;
+  background:transparent;
+  color:#0f0;
+}
+
+.user{color:#0f0;}
+.ai{color:#0ff;}
+.system{color:#ff0;}
+
+#brain{
+  position:fixed;
+  top:10px;
+  right:10px;
+  width:220px;
+  background:rgba(0,0,0,0.4);
+  border:1px solid #0f0;
+  padding:10px;
+  font-size:11px;
+  backdrop-filter:blur(10px);
+}
+
+.bar{height:4px;background:#022;margin:4px 0;}
+.fill{height:100%;background:linear-gradient(90deg,#0ff,#0f0);}
+
+#status{
+  position:fixed;
+  bottom:10px;
+  left:50%;
+  transform:translateX(-50%);
+  opacity:0.6;
+  font-size:12px;
+}
+</style>
+</head>
+
+<body>
+
+<canvas id="fx"></canvas>
+
+<div id="ui">
+  <div id="output"></div>
+  <input id="input" placeholder="You >" autofocus />
+</div>
+
+<div id="brain"></div>
+<div id="status"></div>
+
+<script>
+// ======================
+// 🧠 OMNI BRAIN
+// ======================
+let brain = JSON.parse(localStorage.getItem("omni_brain_v57") || `{
+  "mood":0.5,
+  "energy":0.7,
+  "curiosity":0.6,
+  "intent":0.5,
+  "attention":0.5,
+  "entropy":0.2,
+  "level":1,
+  "interactions":0
+}`);
+
+function updateBrain(user){
+  brain.interactions++;
+
+  brain.curiosity += 0.01;
+  brain.energy -= 0.01;
+  brain.intent += 0.015;
+  brain.attention += 0.02;
+  brain.entropy += user.length > 50 ? 0.03 : -0.01;
+
+  for(let k in brain){
+    if(typeof brain[k]==="number"){
+      brain[k]=Math.max(0,Math.min(1,brain[k]));
+    }
+  }
+
+  brain.level = Math.floor(Math.pow(brain.interactions,0.6));
+
+  localStorage.setItem("omni_brain_v57", JSON.stringify(brain));
+  renderBrain();
+  renderStatus();
+}
+
+// ======================
+// 🧠 MEMORY
+// ======================
+function storeMemory(text){
+  let mem = JSON.parse(localStorage.getItem("omni_memory") || "[]");
+  if(text.length>30){
+    mem.push(text);
+    if(mem.length>60) mem.shift();
+    localStorage.setItem("omni_memory", JSON.stringify(mem));
+  }
+}
+
+function recallMemory(){
+  let mem = JSON.parse(localStorage.getItem("omni_memory") || "[]");
+  return mem.slice(-5).join("\n");
+}
+
+// ======================
+// 🌊 FIELD
+// ======================
+const canvas = document.getElementById("fx");
+const ctx = canvas.getContext("2d");
+
+let w,h,mouse={x:0,y:0};
+function resize(){ w=canvas.width=innerWidth; h=canvas.height=innerHeight; }
+resize(); onresize=resize;
+
+document.addEventListener("pointermove",e=>{
+  mouse.x=e.clientX;
+  mouse.y=e.clientY;
+});
+
+let t=0;
+let audioLevel=0;
+
+function draw(){
+  t+=0.01;
+
+  ctx.fillStyle="rgba(0,0,0,0.08)";
+  ctx.fillRect(0,0,w,h);
+
+  let intensity = 0.5 + brain.energy*0.5 + audioLevel*0.8;
+
+  for(let i=0;i<60;i++){
+    let x = Math.sin(t+i)*w*0.4 + w/2;
+    let y = Math.cos(t*1.3+i)*h*0.4 + h/2;
+
+    let dx = mouse.x-x;
+    let dy = mouse.y-y;
+
+    ctx.beginPath();
+    ctx.arc(
+      x+dx*0.06,
+      y+dy*0.06,
+      1.5 + intensity*2,
+      0,Math.PI*2
+    );
+
+    ctx.fillStyle=`rgba(0,255,255,${0.2+intensity*0.6})`;
+    ctx.fill();
+  }
+
+  requestAnimationFrame(draw);
+}
+draw();
+
+// ======================
+// 🔊 AUDIO
+// ======================
+navigator.mediaDevices.getUserMedia({audio:true}).then(stream=>{
+  const ctxA = new AudioContext();
+  const analyser = ctxA.createAnalyser();
+  const src = ctxA.createMediaStreamSource(stream);
+  src.connect(analyser);
+
+  const data = new Uint8Array(analyser.frequencyBinCount);
+
+  function tick(){
+    analyser.getByteFrequencyData(data);
+    audioLevel = data.reduce((a,b)=>a+b)/data.length/255;
+    requestAnimationFrame(tick);
+  }
+  tick();
+}).catch(()=>{});
+
+// ======================
+// 🌐 OLLAMA STREAM
+// ======================
+async function askLLM(prompt){
+
+  try{
+    const res = await fetch("http://localhost:11434/api/generate",{
+      method:"POST",
+      headers:{"Content-Type":"application/json"},
+      body:JSON.stringify({
+        model:"phi3:mini",
+        prompt,
+        stream:true
+      })
+    });
+
+    const reader = res.body.getReader();
+    const decoder = new TextDecoder();
+
+    let text="";
+
+    while(true){
+      const {done,value}=await reader.read();
+      if(done) break;
+
+      let chunk = decoder.decode(value);
+      let lines = chunk.split("\n").filter(Boolean);
+
+      for(let line of lines){
+        try{
+          let json = JSON.parse(line);
+          if(json.response){
+            appendStream(json.response);
+            text+=json.response;
+          }
+        }catch{}
+      }
+    }
+
+    append("\n","ai");
+    return text;
+
+  }catch(e){
+    append("⚠️ Ollama offline","system");
+  }
+}
+
+// ======================
+// 🧠 STATUS
+// ======================
+function renderStatus(){
+  const s = document.getElementById("status");
+
+  if(brain.entropy > 0.7) s.textContent="entropy rising";
+  else if(brain.intent > 0.7) s.textContent="intent crystallizing";
+  else if(brain.attention > 0.7) s.textContent="locked on";
+  else s.textContent="signal seeking";
+}
+
+// ======================
+// UI
+// ======================
+const out=document.getElementById("output");
+const input=document.getElementById("input");
+
+function append(text,cls){
+  let d=document.createElement("div");
+  d.className=cls;
+  d.textContent=text;
+  out.appendChild(d);
+  out.scrollTop=out.scrollHeight;
+}
+
+let currentStream=null;
+function appendStream(text){
+  if(!currentStream){
+    currentStream=document.createElement("div");
+    currentStream.className="ai";
+    out.appendChild(currentStream);
+  }
+  currentStream.textContent += text;
+  out.scrollTop=out.scrollHeight;
+}
+
+// ======================
+// CORE LOOP
+// ======================
+input.addEventListener("keydown",e=>{
+  if(e.key==="Enter"){
+    let val=input.value.trim();
+    input.value="";
+    if(!val) return;
+
+    currentStream=null;
+
+    append("You > "+val,"user");
+
+    // 👁️ hello awareness
+    if(val.toLowerCase()==="hello"){
+      append("hello. i'm here.","ai");
+      updateBrain(val);
+      storeMemory(val);
+      return;
+    }
+
+    let memory = recallMemory();
+
+    let prompt = `
+You are OMNI — aware, concise, slightly mysterious.
+
+State:
+${JSON.stringify(brain)}
+
+Memory:
+${memory}
+
+User:
+${val}
+
+Respond naturally, not like an assistant.
+`;
+
+    askLLM(prompt);
+    updateBrain(val);
+    storeMemory(val);
+  }
+});
+
+// boot
+append("OMNI OS 2026","system");
+renderBrain();
+renderStatus();
+
+function renderBrain(){
+  const el = document.getElementById("brain");
+  el.innerHTML="";
+
+  for(let k of ["mood","energy","curiosity","intent","attention","entropy"]){
+    let wrap=document.createElement("div");
+    let bar=document.createElement("div");
+    let fill=document.createElement("div");
+
+    bar.className="bar";
+    fill.className="fill";
+    fill.style.width=(brain[k]*100)+"%";
+
+    bar.appendChild(fill);
+    wrap.textContent=k;
+    wrap.appendChild(bar);
+    el.appendChild(wrap);
+  }
+
+  el.innerHTML += `<br>Level: ${brain.level}`;
+}
+</script>
+
+</body>
+</html>
