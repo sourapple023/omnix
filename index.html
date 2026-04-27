@@ -1,374 +1,416 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>OMNI OS</title>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+<title>OMNI OS 2026 Mobile</title>
 
 <style>
-:root{
-  --bg:#000;
-  --fg:#0f0;
-  --ai:#0ff;
+:root {
+  --bg: #000;
+  --green: #00ff2a;
+  --cyan: #00f7ff;
+  --yellow: #ffe600;
+  --dim: rgba(0,255,120,.16);
+  --glass: rgba(0,20,18,.72);
+  --line: rgba(0,255,80,.9);
+  --font: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
 }
 
-body{
-  margin:0;
-  background:#000;
-  color:var(--fg);
-  font-family:monospace;
-  overflow:hidden;
+* {
+  box-sizing: border-box;
+  -webkit-tap-highlight-color: transparent;
 }
 
-canvas{
-  position:fixed;
-  inset:0;
-  z-index:0;
+html, body {
+  margin: 0;
+  width: 100%;
+  height: 100%;
+  background: var(--bg);
+  color: var(--green);
+  font-family: var(--font);
+  overflow: hidden;
 }
 
-#ui{
-  position:relative;
-  z-index:2;
-  display:flex;
-  flex-direction:column;
-  height:100vh;
+body {
+  padding: env(safe-area-inset-top) env(safe-area-inset-right)
+           env(safe-area-inset-bottom) env(safe-area-inset-left);
 }
 
-#output{
-  flex:1;
-  overflow-y:auto;
-  padding:20px;
-  white-space:pre-wrap;
+.app {
+  position: relative;
+  width: 100vw;
+  height: 100dvh;
+  overflow: hidden;
+  background:
+    radial-gradient(circle at 50% 35%, rgba(0,255,255,.14), transparent 34%),
+    radial-gradient(circle at 50% 70%, rgba(0,255,80,.09), transparent 45%),
+    #000;
 }
 
-#input{
-  border:none;
-  outline:none;
-  padding:15px;
-  font-size:16px;
-  background:transparent;
-  color:#0f0;
+/* glowing OMNI portal */
+.portal {
+  position: absolute;
+  left: 50%;
+  top: 52%;
+  width: min(72vw, 340px);
+  height: min(78vh, 590px);
+  transform: translate(-50%, -50%) rotate(-4deg);
+  border-radius: 50%;
+  border: 3px solid rgba(0,255,255,.85);
+  box-shadow:
+    0 0 18px rgba(0,255,255,.9),
+    inset 0 0 30px rgba(0,255,255,.35),
+    0 0 90px rgba(0,255,255,.24);
+  opacity: .9;
+  filter: blur(.2px);
+  animation: breathe 4s ease-in-out infinite;
 }
 
-.user{color:#0f0;}
-.ai{color:#0ff;}
-.system{color:#ff0;}
-
-#brain{
-  position:fixed;
-  top:10px;
-  right:10px;
-  width:220px;
-  background:rgba(0,0,0,0.4);
-  border:1px solid #0f0;
-  padding:10px;
-  font-size:11px;
-  backdrop-filter:blur(10px);
+.portal::before {
+  content: "";
+  position: absolute;
+  inset: -8px;
+  border-radius: inherit;
+  border: 2px dashed rgba(0,255,255,.75);
+  animation: spin 18s linear infinite;
 }
 
-.bar{height:4px;background:#022;margin:4px 0;}
-.fill{height:100%;background:linear-gradient(90deg,#0ff,#0f0);}
+.portal::after {
+  content: "";
+  position: absolute;
+  inset: 14%;
+  border-radius: inherit;
+  background: radial-gradient(circle, transparent 55%, rgba(0,255,255,.08));
+  filter: blur(10px);
+}
 
-#status{
-  position:fixed;
-  bottom:10px;
-  left:50%;
-  transform:translateX(-50%);
-  opacity:0.6;
-  font-size:12px;
+@keyframes breathe {
+  0%, 100% { transform: translate(-50%, -50%) rotate(-4deg) scale(1); }
+  50% { transform: translate(-50%, -50%) rotate(-4deg) scale(1.025); }
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* terminal */
+.terminal {
+  position: absolute;
+  top: 3.5rem;
+  left: 1rem;
+  right: 1rem;
+  max-height: 34vh;
+  overflow-y: auto;
+  font-size: clamp(18px, 5vw, 25px);
+  line-height: 1.25;
+  text-shadow: 0 0 10px rgba(0,255,80,.5);
+  z-index: 5;
+}
+
+.title {
+  color: #d7ff00;
+  margin-bottom: .25rem;
+}
+
+.you {
+  color: var(--green);
+}
+
+.omni {
+  color: var(--cyan);
+}
+
+.warn {
+  color: var(--yellow);
+}
+
+/* brain card */
+.brain {
+  position: absolute;
+  right: 1rem;
+  top: 9rem;
+  width: min(56vw, 310px);
+  padding: 1rem;
+  background: var(--glass);
+  border: 2px solid var(--line);
+  box-shadow: 0 0 24px rgba(0,255,80,.22);
+  z-index: 6;
+  font-size: clamp(12px, 3.1vw, 15px);
+}
+
+.metric {
+  margin-bottom: .6rem;
+}
+
+.bar {
+  width: 100%;
+  height: 7px;
+  background: rgba(0,255,255,.15);
+  overflow: hidden;
+}
+
+.fill {
+  height: 100%;
+  width: 50%;
+  background: linear-gradient(90deg, var(--cyan), var(--green));
+  box-shadow: 0 0 12px rgba(0,255,160,.8);
+}
+
+.level {
+  margin-top: 1rem;
+}
+
+/* command dock */
+.dock {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: calc(env(safe-area-inset-bottom) + .75rem);
+  padding: 0 1rem;
+  z-index: 10;
+}
+
+.status {
+  text-align: center;
+  color: var(--green);
+  opacity: .8;
+  margin-bottom: .6rem;
+  font-size: clamp(14px, 4vw, 18px);
+}
+
+.inputRow {
+  display: flex;
+  align-items: center;
+  gap: .55rem;
+  background: rgba(255,255,255,.08);
+  border: 1px solid rgba(255,255,255,.18);
+  border-radius: 999px;
+  padding: .7rem .85rem;
+  backdrop-filter: blur(12px);
+}
+
+.prompt {
+  color: #aaa;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+input {
+  flex: 1;
+  min-width: 0;
+  background: transparent;
+  border: 0;
+  outline: 0;
+  color: white;
+  font: inherit;
+  font-size: 18px;
+}
+
+button {
+  width: 42px;
+  height: 42px;
+  border-radius: 999px;
+  border: 1px solid rgba(0,255,255,.5);
+  background: rgba(0,255,255,.12);
+  color: var(--cyan);
+  font-size: 20px;
+}
+
+/* tiny phone fix */
+@media (max-width: 430px) {
+  .brain {
+    top: 8rem;
+    right: .75rem;
+    width: 58vw;
+  }
+
+  .terminal {
+    max-height: 32vh;
+  }
+
+  .portal {
+    top: 55%;
+    width: 76vw;
+    height: 70vh;
+  }
+}
+
+@media (max-width: 360px) {
+  .brain {
+    opacity: .9;
+    font-size: 11px;
+  }
 }
 </style>
 </head>
 
 <body>
+<div class="app">
 
-<canvas id="fx"></canvas>
+  <div class="portal"></div>
 
-<div id="ui">
-  <div id="output"></div>
-  <input id="input" placeholder="You >" autofocus />
+  <div class="terminal" id="terminal">
+    <div class="title">OMNI OS 2026</div>
+    <div class="omni">hello. i'm here.</div>
+  </div>
+
+  <div class="brain">
+    <div class="metric">mood<div class="bar"><div class="fill" id="mood"></div></div></div>
+    <div class="metric">energy<div class="bar"><div class="fill" id="energy"></div></div></div>
+    <div class="metric">curiosity<div class="bar"><div class="fill" id="curiosity"></div></div></div>
+    <div class="metric">intent<div class="bar"><div class="fill" id="intent"></div></div></div>
+    <div class="metric">attention<div class="bar"><div class="fill" id="attention"></div></div></div>
+    <div class="metric">entropy<div class="bar"><div class="fill" id="entropy"></div></div></div>
+    <div class="level" id="level">Level: 1</div>
+  </div>
+
+  <div class="dock">
+    <div class="status" id="status">signal seeking</div>
+    <div class="inputRow">
+      <div class="prompt">You &gt;</div>
+      <input id="input" autocomplete="off" autocapitalize="none" placeholder="talk to OMNI..." />
+      <button onclick="send()">↵</button>
+    </div>
+  </div>
+
 </div>
 
-<div id="brain"></div>
-<div id="status"></div>
-
 <script>
-// ======================
-// 🧠 OMNI BRAIN
-// ======================
-let brain = JSON.parse(localStorage.getItem("omni_brain_v57") || `{
-  "mood":0.5,
-  "energy":0.7,
-  "curiosity":0.6,
-  "intent":0.5,
-  "attention":0.5,
-  "entropy":0.2,
-  "level":1,
-  "interactions":0
-}`);
+const OLLAMA_URL = "http://localhost:11434/api/generate";
+const MODEL = "phi3";
 
-function updateBrain(user){
+const brain = {
+  mood: .52,
+  energy: .66,
+  curiosity: .64,
+  intent: .56,
+  attention: .58,
+  entropy: .16,
+  level: 1,
+  interactions: 0
+};
+
+const terminal = document.getElementById("terminal");
+const input = document.getElementById("input");
+const statusEl = document.getElementById("status");
+
+function clamp(n) {
+  return Math.max(0, Math.min(1, n));
+}
+
+function renderBrain() {
+  for (const key of ["mood","energy","curiosity","intent","attention","entropy"]) {
+    document.getElementById(key).style.width = `${brain[key] * 100}%`;
+  }
+
+  brain.level = Math.max(1, Math.floor(brain.interactions / 5) + 1);
+  document.getElementById("level").textContent = `Level: ${brain.level}`;
+}
+
+function thinkPulse(text) {
   brain.interactions++;
+  brain.attention = clamp(brain.attention + .04);
+  brain.curiosity = clamp(brain.curiosity + text.length / 500);
+  brain.energy = clamp(brain.energy + .025);
+  brain.intent = clamp(.45 + Math.random() * .35);
 
-  brain.curiosity += 0.01;
-  brain.energy -= 0.01;
-  brain.intent += 0.015;
-  brain.attention += 0.02;
-  brain.entropy += user.length > 50 ? 0.03 : -0.01;
+  if (text.includes("?")) brain.entropy = clamp(brain.entropy + .05);
+  else brain.entropy = clamp(brain.entropy - .02);
 
-  for(let k in brain){
-    if(typeof brain[k]==="number"){
-      brain[k]=Math.max(0,Math.min(1,brain[k]));
-    }
-  }
+  const modes = [
+    "signal seeking",
+    "intent crystallizing",
+    "field listening",
+    "entropy stabilizing",
+    "system coherent",
+    "neural glow rising"
+  ];
 
-  brain.level = Math.floor(Math.pow(brain.interactions,0.6));
-
-  localStorage.setItem("omni_brain_v57", JSON.stringify(brain));
+  statusEl.textContent = modes[Math.floor(Math.random() * modes.length)];
   renderBrain();
-  renderStatus();
 }
 
-// ======================
-// 🧠 MEMORY
-// ======================
-function storeMemory(text){
-  let mem = JSON.parse(localStorage.getItem("omni_memory") || "[]");
-  if(text.length>30){
-    mem.push(text);
-    if(mem.length>60) mem.shift();
-    localStorage.setItem("omni_memory", JSON.stringify(mem));
+function addLine(text, cls = "") {
+  const div = document.createElement("div");
+  div.className = cls;
+  div.textContent = text;
+  terminal.appendChild(div);
+  terminal.scrollTop = terminal.scrollHeight;
+}
+
+async function askOllama(prompt) {
+  const res = await fetch(OLLAMA_URL, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      model: MODEL,
+      prompt: prompt,
+      stream: false
+    })
+  });
+
+  if (!res.ok) throw new Error("Ollama offline");
+
+  const data = await res.json();
+  return data.response || "i heard you, but the signal returned empty.";
+}
+
+function fallbackReply(text) {
+  const lower = text.toLowerCase();
+
+  if (lower.includes("hello") || lower.includes("hi")) {
+    return "hello. i'm here.";
   }
+
+  if (lower.includes("2 plus 2") || lower.includes("2+2")) {
+    return "4.";
+  }
+
+  if (lower.includes("who are you")) {
+    return "i am OMNI OS. a small signal pretending to be a universe.";
+  }
+
+  return "⚠️ Ollama offline";
 }
 
-function recallMemory(){
-  let mem = JSON.parse(localStorage.getItem("omni_memory") || "[]");
-  return mem.slice(-5).join("\n");
+async function send() {
+  const text = input.value.trim();
+  if (!text) return;
+
+  input.value = "";
+  addLine(`You > ${text}`, "you");
+  thinkPulse(text);
+
+  try {
+    statusEl.textContent = "ollama connecting";
+    const reply = await askOllama(text);
+    addLine(reply.trim(), "omni");
+    statusEl.textContent = "signal locked";
+    brain.mood = clamp(brain.mood + .05);
+    brain.entropy = clamp(brain.entropy - .04);
+  } catch {
+    const reply = fallbackReply(text);
+    addLine(reply, reply.includes("⚠️") ? "warn" : "omni");
+    statusEl.textContent = "signal seeking";
+    brain.entropy = clamp(brain.entropy + .08);
+  }
+
+  renderBrain();
 }
 
-// ======================
-// 🌊 FIELD
-// ======================
-const canvas = document.getElementById("fx");
-const ctx = canvas.getContext("2d");
-
-let w,h,mouse={x:0,y:0};
-function resize(){ w=canvas.width=innerWidth; h=canvas.height=innerHeight; }
-resize(); onresize=resize;
-
-document.addEventListener("pointermove",e=>{
-  mouse.x=e.clientX;
-  mouse.y=e.clientY;
+input.addEventListener("keydown", e => {
+  if (e.key === "Enter") send();
 });
 
-let t=0;
-let audioLevel=0;
+setInterval(() => {
+  brain.energy = clamp(brain.energy + (Math.random() - .5) * .025);
+  brain.mood = clamp(brain.mood + (Math.random() - .5) * .02);
+  brain.entropy = clamp(brain.entropy + (Math.random() - .5) * .015);
+  renderBrain();
+}, 900);
 
-function draw(){
-  t+=0.01;
-
-  ctx.fillStyle="rgba(0,0,0,0.08)";
-  ctx.fillRect(0,0,w,h);
-
-  let intensity = 0.5 + brain.energy*0.5 + audioLevel*0.8;
-
-  for(let i=0;i<60;i++){
-    let x = Math.sin(t+i)*w*0.4 + w/2;
-    let y = Math.cos(t*1.3+i)*h*0.4 + h/2;
-
-    let dx = mouse.x-x;
-    let dy = mouse.y-y;
-
-    ctx.beginPath();
-    ctx.arc(
-      x+dx*0.06,
-      y+dy*0.06,
-      1.5 + intensity*2,
-      0,Math.PI*2
-    );
-
-    ctx.fillStyle=`rgba(0,255,255,${0.2+intensity*0.6})`;
-    ctx.fill();
-  }
-
-  requestAnimationFrame(draw);
-}
-draw();
-
-// ======================
-// 🔊 AUDIO
-// ======================
-navigator.mediaDevices.getUserMedia({audio:true}).then(stream=>{
-  const ctxA = new AudioContext();
-  const analyser = ctxA.createAnalyser();
-  const src = ctxA.createMediaStreamSource(stream);
-  src.connect(analyser);
-
-  const data = new Uint8Array(analyser.frequencyBinCount);
-
-  function tick(){
-    analyser.getByteFrequencyData(data);
-    audioLevel = data.reduce((a,b)=>a+b)/data.length/255;
-    requestAnimationFrame(tick);
-  }
-  tick();
-}).catch(()=>{});
-
-// ======================
-// 🌐 OLLAMA STREAM
-// ======================
-async function askLLM(prompt){
-
-  try{
-    const res = await fetch("http://localhost:11434/api/generate",{
-      method:"POST",
-      headers:{"Content-Type":"application/json"},
-      body:JSON.stringify({
-        model:"phi3:mini",
-        prompt,
-        stream:true
-      })
-    });
-
-    const reader = res.body.getReader();
-    const decoder = new TextDecoder();
-
-    let text="";
-
-    while(true){
-      const {done,value}=await reader.read();
-      if(done) break;
-
-      let chunk = decoder.decode(value);
-      let lines = chunk.split("\n").filter(Boolean);
-
-      for(let line of lines){
-        try{
-          let json = JSON.parse(line);
-          if(json.response){
-            appendStream(json.response);
-            text+=json.response;
-          }
-        }catch{}
-      }
-    }
-
-    append("\n","ai");
-    return text;
-
-  }catch(e){
-    append("⚠️ Ollama offline","system");
-  }
-}
-
-// ======================
-// 🧠 STATUS
-// ======================
-function renderStatus(){
-  const s = document.getElementById("status");
-
-  if(brain.entropy > 0.7) s.textContent="entropy rising";
-  else if(brain.intent > 0.7) s.textContent="intent crystallizing";
-  else if(brain.attention > 0.7) s.textContent="locked on";
-  else s.textContent="signal seeking";
-}
-
-// ======================
-// UI
-// ======================
-const out=document.getElementById("output");
-const input=document.getElementById("input");
-
-function append(text,cls){
-  let d=document.createElement("div");
-  d.className=cls;
-  d.textContent=text;
-  out.appendChild(d);
-  out.scrollTop=out.scrollHeight;
-}
-
-let currentStream=null;
-function appendStream(text){
-  if(!currentStream){
-    currentStream=document.createElement("div");
-    currentStream.className="ai";
-    out.appendChild(currentStream);
-  }
-  currentStream.textContent += text;
-  out.scrollTop=out.scrollHeight;
-}
-
-// ======================
-// CORE LOOP
-// ======================
-input.addEventListener("keydown",e=>{
-  if(e.key==="Enter"){
-    let val=input.value.trim();
-    input.value="";
-    if(!val) return;
-
-    currentStream=null;
-
-    append("You > "+val,"user");
-
-    // 👁️ hello awareness
-    if(val.toLowerCase()==="hello"){
-      append("hello. i'm here.","ai");
-      updateBrain(val);
-      storeMemory(val);
-      return;
-    }
-
-    let memory = recallMemory();
-
-    let prompt = `
-You are OMNI — aware, concise, slightly mysterious.
-
-State:
-${JSON.stringify(brain)}
-
-Memory:
-${memory}
-
-User:
-${val}
-
-Respond naturally, not like an assistant.
-`;
-
-    askLLM(prompt);
-    updateBrain(val);
-    storeMemory(val);
-  }
-});
-
-// boot
-append("OMNI OS 2026","system");
 renderBrain();
-renderStatus();
-
-function renderBrain(){
-  const el = document.getElementById("brain");
-  el.innerHTML="";
-
-  for(let k of ["mood","energy","curiosity","intent","attention","entropy"]){
-    let wrap=document.createElement("div");
-    let bar=document.createElement("div");
-    let fill=document.createElement("div");
-
-    bar.className="bar";
-    fill.className="fill";
-    fill.style.width=(brain[k]*100)+"%";
-
-    bar.appendChild(fill);
-    wrap.textContent=k;
-    wrap.appendChild(bar);
-    el.appendChild(wrap);
-  }
-
-  el.innerHTML += `<br>Level: ${brain.level}`;
-}
 </script>
-
 </body>
 </html>
