@@ -1,416 +1,161 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-<title>OMNI OS 2026 Mobile</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>The Infinite Void</title>
+    <style>
+        body, html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background-color: #050505;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
 
-<style>
-:root {
-  --bg: #000;
-  --green: #00ff2a;
-  --cyan: #00f7ff;
-  --yellow: #ffe600;
-  --dim: rgba(0,255,120,.16);
-  --glass: rgba(0,20,18,.72);
-  --line: rgba(0,255,80,.9);
-  --font: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
-}
+        canvas {
+            display: block;
+        }
 
-* {
-  box-sizing: border-box;
-  -webkit-tap-highlight-color: transparent;
-}
+        #ui {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: rgba(255, 255, 255, 0.2);
+            text-align: center;
+            pointer-events: none;
+            user-select: none;
+            letter-spacing: 0.5rem;
+            text-transform: uppercase;
+            transition: opacity 2s ease;
+        }
 
-html, body {
-  margin: 0;
-  width: 100%;
-  height: 100%;
-  background: var(--bg);
-  color: var(--green);
-  font-family: var(--font);
-  overflow: hidden;
-}
-
-body {
-  padding: env(safe-area-inset-top) env(safe-area-inset-right)
-           env(safe-area-inset-bottom) env(safe-area-inset-left);
-}
-
-.app {
-  position: relative;
-  width: 100vw;
-  height: 100dvh;
-  overflow: hidden;
-  background:
-    radial-gradient(circle at 50% 35%, rgba(0,255,255,.14), transparent 34%),
-    radial-gradient(circle at 50% 70%, rgba(0,255,80,.09), transparent 45%),
-    #000;
-}
-
-/* glowing OMNI portal */
-.portal {
-  position: absolute;
-  left: 50%;
-  top: 52%;
-  width: min(72vw, 340px);
-  height: min(78vh, 590px);
-  transform: translate(-50%, -50%) rotate(-4deg);
-  border-radius: 50%;
-  border: 3px solid rgba(0,255,255,.85);
-  box-shadow:
-    0 0 18px rgba(0,255,255,.9),
-    inset 0 0 30px rgba(0,255,255,.35),
-    0 0 90px rgba(0,255,255,.24);
-  opacity: .9;
-  filter: blur(.2px);
-  animation: breathe 4s ease-in-out infinite;
-}
-
-.portal::before {
-  content: "";
-  position: absolute;
-  inset: -8px;
-  border-radius: inherit;
-  border: 2px dashed rgba(0,255,255,.75);
-  animation: spin 18s linear infinite;
-}
-
-.portal::after {
-  content: "";
-  position: absolute;
-  inset: 14%;
-  border-radius: inherit;
-  background: radial-gradient(circle, transparent 55%, rgba(0,255,255,.08));
-  filter: blur(10px);
-}
-
-@keyframes breathe {
-  0%, 100% { transform: translate(-50%, -50%) rotate(-4deg) scale(1); }
-  50% { transform: translate(-50%, -50%) rotate(-4deg) scale(1.025); }
-}
-
-@keyframes spin {
-  to { transform: rotate(360deg); }
-}
-
-/* terminal */
-.terminal {
-  position: absolute;
-  top: 3.5rem;
-  left: 1rem;
-  right: 1rem;
-  max-height: 34vh;
-  overflow-y: auto;
-  font-size: clamp(18px, 5vw, 25px);
-  line-height: 1.25;
-  text-shadow: 0 0 10px rgba(0,255,80,.5);
-  z-index: 5;
-}
-
-.title {
-  color: #d7ff00;
-  margin-bottom: .25rem;
-}
-
-.you {
-  color: var(--green);
-}
-
-.omni {
-  color: var(--cyan);
-}
-
-.warn {
-  color: var(--yellow);
-}
-
-/* brain card */
-.brain {
-  position: absolute;
-  right: 1rem;
-  top: 9rem;
-  width: min(56vw, 310px);
-  padding: 1rem;
-  background: var(--glass);
-  border: 2px solid var(--line);
-  box-shadow: 0 0 24px rgba(0,255,80,.22);
-  z-index: 6;
-  font-size: clamp(12px, 3.1vw, 15px);
-}
-
-.metric {
-  margin-bottom: .6rem;
-}
-
-.bar {
-  width: 100%;
-  height: 7px;
-  background: rgba(0,255,255,.15);
-  overflow: hidden;
-}
-
-.fill {
-  height: 100%;
-  width: 50%;
-  background: linear-gradient(90deg, var(--cyan), var(--green));
-  box-shadow: 0 0 12px rgba(0,255,160,.8);
-}
-
-.level {
-  margin-top: 1rem;
-}
-
-/* command dock */
-.dock {
-  position: absolute;
-  left: 0;
-  right: 0;
-  bottom: calc(env(safe-area-inset-bottom) + .75rem);
-  padding: 0 1rem;
-  z-index: 10;
-}
-
-.status {
-  text-align: center;
-  color: var(--green);
-  opacity: .8;
-  margin-bottom: .6rem;
-  font-size: clamp(14px, 4vw, 18px);
-}
-
-.inputRow {
-  display: flex;
-  align-items: center;
-  gap: .55rem;
-  background: rgba(255,255,255,.08);
-  border: 1px solid rgba(255,255,255,.18);
-  border-radius: 999px;
-  padding: .7rem .85rem;
-  backdrop-filter: blur(12px);
-}
-
-.prompt {
-  color: #aaa;
-  font-weight: 700;
-  white-space: nowrap;
-}
-
-input {
-  flex: 1;
-  min-width: 0;
-  background: transparent;
-  border: 0;
-  outline: 0;
-  color: white;
-  font: inherit;
-  font-size: 18px;
-}
-
-button {
-  width: 42px;
-  height: 42px;
-  border-radius: 999px;
-  border: 1px solid rgba(0,255,255,.5);
-  background: rgba(0,255,255,.12);
-  color: var(--cyan);
-  font-size: 20px;
-}
-
-/* tiny phone fix */
-@media (max-width: 430px) {
-  .brain {
-    top: 8rem;
-    right: .75rem;
-    width: 58vw;
-  }
-
-  .terminal {
-    max-height: 32vh;
-  }
-
-  .portal {
-    top: 55%;
-    width: 76vw;
-    height: 70vh;
-  }
-}
-
-@media (max-width: 360px) {
-  .brain {
-    opacity: .9;
-    font-size: 11px;
-  }
-}
-</style>
+        .hint {
+            font-size: 0.8rem;
+            margin-top: 10px;
+        }
+    </style>
 </head>
-
 <body>
-<div class="app">
 
-  <div class="portal"></div>
-
-  <div class="terminal" id="terminal">
-    <div class="title">OMNI OS 2026</div>
-    <div class="omni">hello. i'm here.</div>
-  </div>
-
-  <div class="brain">
-    <div class="metric">mood<div class="bar"><div class="fill" id="mood"></div></div></div>
-    <div class="metric">energy<div class="bar"><div class="fill" id="energy"></div></div></div>
-    <div class="metric">curiosity<div class="bar"><div class="fill" id="curiosity"></div></div></div>
-    <div class="metric">intent<div class="bar"><div class="fill" id="intent"></div></div></div>
-    <div class="metric">attention<div class="bar"><div class="fill" id="attention"></div></div></div>
-    <div class="metric">entropy<div class="bar"><div class="fill" id="entropy"></div></div></div>
-    <div class="level" id="level">Level: 1</div>
-  </div>
-
-  <div class="dock">
-    <div class="status" id="status">signal seeking</div>
-    <div class="inputRow">
-      <div class="prompt">You &gt;</div>
-      <input id="input" autocomplete="off" autocapitalize="none" placeholder="talk to OMNI..." />
-      <button onclick="send()">↵</button>
+    <div id="ui">
+        <h1>Infinite</h1>
+        <div class="hint">Move to navigate • Scroll to accelerate</div>
     </div>
-  </div>
 
-</div>
+    <canvas id="canvas"></canvas>
 
-<script>
-const OLLAMA_URL = "http://localhost:11434/api/generate";
-const MODEL = "phi3";
+    <script>
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+        const ui = document.getElementById('ui');
 
-const brain = {
-  mood: .52,
-  energy: .66,
-  curiosity: .64,
-  intent: .56,
-  attention: .58,
-  entropy: .16,
-  level: 1,
-  interactions: 0
-};
+        let width, height, lastTime;
+        let stars = [];
+        let speed = 0.05;
+        let targetSpeed = 0.05;
+        let mouseX = 0;
+        let mouseY = 0;
 
-const terminal = document.getElementById("terminal");
-const input = document.getElementById("input");
-const statusEl = document.getElementById("status");
+        // Configuration
+        const STAR_COUNT = 1000;
+        const COLORS = ['#7eaeff', '#ffffff', '#ffedd1', '#6292ff'];
 
-function clamp(n) {
-  return Math.max(0, Math.min(1, n));
-}
+        class Star {
+            constructor() {
+                this.reset();
+            }
 
-function renderBrain() {
-  for (const key of ["mood","energy","curiosity","intent","attention","entropy"]) {
-    document.getElementById(key).style.width = `${brain[key] * 100}%`;
-  }
+            reset() {
+                this.x = (Math.random() - 0.5) * 2000;
+                this.y = (Math.random() - 0.5) * 2000;
+                this.z = Math.random() * 2000;
+                this.px = 0;
+                this.py = 0;
+                this.color = COLORS[Math.floor(Math.random() * COLORS.length)];
+            }
 
-  brain.level = Math.max(1, Math.floor(brain.interactions / 5) + 1);
-  document.getElementById("level").textContent = `Level: ${brain.level}`;
-}
+            update(dt) {
+                this.z -= speed * dt;
+                
+                // If star passes the camera, wrap it to the back
+                if (this.z < 1) {
+                    this.reset();
+                    this.z = 2000;
+                }
+            }
 
-function thinkPulse(text) {
-  brain.interactions++;
-  brain.attention = clamp(brain.attention + .04);
-  brain.curiosity = clamp(brain.curiosity + text.length / 500);
-  brain.energy = clamp(brain.energy + .025);
-  brain.intent = clamp(.45 + Math.random() * .35);
+            draw() {
+                // Perspective projection
+                const x = (this.x - mouseX * 0.5) * (600 / this.z);
+                const y = (this.y - mouseY * 0.5) * (600 / this.z);
 
-  if (text.includes("?")) brain.entropy = clamp(brain.entropy + .05);
-  else brain.entropy = clamp(brain.entropy - .02);
+                const size = (1 - this.z / 2000) * 3;
+                
+                if (this.px !== 0) {
+                    ctx.strokeStyle = this.color;
+                    ctx.lineWidth = size;
+                    ctx.beginPath();
+                    ctx.moveTo(x + width / 2, y + height / 2);
+                    ctx.lineTo(this.px + width / 2, this.py + height / 2);
+                    ctx.stroke();
+                }
 
-  const modes = [
-    "signal seeking",
-    "intent crystallizing",
-    "field listening",
-    "entropy stabilizing",
-    "system coherent",
-    "neural glow rising"
-  ];
+                this.px = x;
+                this.py = y;
+            }
+        }
 
-  statusEl.textContent = modes[Math.floor(Math.random() * modes.length)];
-  renderBrain();
-}
+        function init() {
+            resize();
+            for (let i = 0; i < STAR_COUNT; i++) {
+                stars.push(new Star());
+            }
+            // Fade out UI after 4 seconds
+            setTimeout(() => ui.style.opacity = '0', 4000);
+            requestAnimationFrame(loop);
+        }
 
-function addLine(text, cls = "") {
-  const div = document.createElement("div");
-  div.className = cls;
-  div.textContent = text;
-  terminal.appendChild(div);
-  terminal.scrollTop = terminal.scrollHeight;
-}
+        function resize() {
+            width = window.innerWidth;
+            height = window.innerHeight;
+            canvas.width = width;
+            canvas.height = height;
+        }
 
-async function askOllama(prompt) {
-  const res = await fetch(OLLAMA_URL, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      model: MODEL,
-      prompt: prompt,
-      stream: false
-    })
-  });
+        window.addEventListener('resize', resize);
+        window.addEventListener('mousemove', (e) => {
+            mouseX = e.clientX - width / 2;
+            mouseY = e.clientY - height / 2;
+        });
 
-  if (!res.ok) throw new Error("Ollama offline");
+        window.addEventListener('wheel', (e) => {
+            targetSpeed = Math.max(0.01, Math.min(2, targetSpeed + e.deltaY * -0.001));
+        });
 
-  const data = await res.json();
-  return data.response || "i heard you, but the signal returned empty.";
-}
+        function loop(time) {
+            if (!lastTime) lastTime = time;
+            const dt = time - lastTime;
+            lastTime = time;
 
-function fallbackReply(text) {
-  const lower = text.toLowerCase();
+            // Smooth speed transition
+            speed += (targetSpeed - speed) * 0.1;
 
-  if (lower.includes("hello") || lower.includes("hi")) {
-    return "hello. i'm here.";
-  }
+            ctx.fillStyle = 'rgba(5, 5, 5, 0.3)'; // Trail effect
+            ctx.fillRect(0, 0, width, height);
 
-  if (lower.includes("2 plus 2") || lower.includes("2+2")) {
-    return "4.";
-  }
+            stars.forEach(star => {
+                star.update(dt);
+                star.draw();
+            });
 
-  if (lower.includes("who are you")) {
-    return "i am OMNI OS. a small signal pretending to be a universe.";
-  }
+            requestAnimationFrame(loop);
+        }
 
-  return "⚠️ Ollama offline";
-}
-
-async function send() {
-  const text = input.value.trim();
-  if (!text) return;
-
-  input.value = "";
-  addLine(`You > ${text}`, "you");
-  thinkPulse(text);
-
-  try {
-    statusEl.textContent = "ollama connecting";
-    const reply = await askOllama(text);
-    addLine(reply.trim(), "omni");
-    statusEl.textContent = "signal locked";
-    brain.mood = clamp(brain.mood + .05);
-    brain.entropy = clamp(brain.entropy - .04);
-  } catch {
-    const reply = fallbackReply(text);
-    addLine(reply, reply.includes("⚠️") ? "warn" : "omni");
-    statusEl.textContent = "signal seeking";
-    brain.entropy = clamp(brain.entropy + .08);
-  }
-
-  renderBrain();
-}
-
-input.addEventListener("keydown", e => {
-  if (e.key === "Enter") send();
-});
-
-setInterval(() => {
-  brain.energy = clamp(brain.energy + (Math.random() - .5) * .025);
-  brain.mood = clamp(brain.mood + (Math.random() - .5) * .02);
-  brain.entropy = clamp(brain.entropy + (Math.random() - .5) * .015);
-  renderBrain();
-}, 900);
-
-renderBrain();
-</script>
+        init();
+    </script>
 </body>
 </html>
